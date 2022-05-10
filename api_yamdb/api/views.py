@@ -3,8 +3,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAdminUser
 
-from api.permissions import IsAuthorModeratorOrReadOnlyPermission, \
-    IsSuperuserPermission
+from api.permissions import IsModeratorPermission, IsContentPermission
 from api.serializers import CategoriesSerializer, GenresSerializer, \
     TitlesSerializer, ReviewsSerializer, СommentsSerializer, UsersSerializer
 
@@ -22,7 +21,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitlesSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (IsSuperuserPermission,)
+    permission_classes = (IsModeratorPermission,)
 
     def perform_create(self, serializer):
         if self.request.user.is_superuser or self.request.user.is_admin:
@@ -33,21 +32,21 @@ class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategoriesSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (IsSuperuserPermission,)
+    permission_classes = (IsContentPermission,)
 
 
 class GenresViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenresSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (IsSuperuserPermission,)
+    permission_classes = (IsContentPermission,)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewsSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (IsAuthorModeratorOrReadOnlyPermission,)
+    permission_classes = (IsModeratorPermission,)
 
     def get_queryset(self):
         title_id = self.kwargs.get("title_id")
@@ -64,7 +63,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = СommentsSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (IsAuthorModeratorOrReadOnlyPermission,)
+    permission_classes = (IsModeratorPermission,)
 
     def get_queryset(self):
         review_id = self.kwargs.get("review_id")

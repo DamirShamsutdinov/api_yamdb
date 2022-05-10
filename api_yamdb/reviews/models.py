@@ -1,10 +1,18 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class User(AbstractUser):
     bio = models.TextField('Биография', blank=True, )
     role = models.CharField(max_length=16, default='user')
+
+    def get_tokens_for_user(user):
+        refresh = RefreshToken.for_user(user)
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
 
 
 class Genre(models.Model):
