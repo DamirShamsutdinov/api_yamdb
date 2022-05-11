@@ -1,34 +1,25 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from rest_framework_simplejwt.tokens import RefreshToken
+
+ROLE = (('admin', 'admin'), ('moderator', 'moderator'), ('user', 'user'))
 
 
 class User(AbstractUser):
     bio = models.TextField('Биография', blank=True, )
-    role = models.CharField(max_length=16, default='user')
-
-    def get_tokens_for_user(user):
-        refresh = RefreshToken.for_user(user)
-        return {
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-        }
+    role = models.CharField(max_length=16, choices=ROLE, default='user')
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=150)
-    slug = models.SlugField(
-        max_length=50,
-        unique=True
-    )
+    name = models.CharField(max_length=256)
+    slug = models.SlugField(max_length=50, unique=True)
 
     def __str__(self):
         return self.slug
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=150)
-    slug = models.SlugField(unique=True)
+    name = models.CharField(max_length=256)
+    slug = models.SlugField(max_length=50, unique=True)
 
     def __str__(self):
         return self.slug
@@ -38,7 +29,7 @@ class Title(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=150)
     year = models.PositiveIntegerField()
-    rating = models.IntegerField(default=0, null=True,
+    rating = models.IntegerField(default=None, null=True,
                                  blank=True)  # нужно отдельную вьюху сделать к нему, среднюю оценку от 1 до 10 по оценки(score) в отзывах(Review)
     description = models.TextField()
     genre = models.ForeignKey(
@@ -61,23 +52,29 @@ class Title(models.Model):
 
 
 class Review(models.Model):
+    # a = list(range(11))
+    # RAITING = dict(zip(a, a))
+    RAITING = (
+        ('0', '0'), ('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'),
+        ('6', '6'), ('7', '7'), ('8', '8'), ('9', '9'), ('10', '10'))
     id = models.AutoField(primary_key=True)
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
         related_name='reviews'
     )
+    text = models.TextField()
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='reviews'
     )
+    score = models.SmallIntegerField('Рейтинг', default=0,
+                                     choices=RAITING)
     pub_date = models.DateTimeField(
         'Дата отзыва',
         auto_now_add=True,
     )
-    text = models.TextField()
-    score = models.IntegerField()
 
 
 class Comment(models.Model):

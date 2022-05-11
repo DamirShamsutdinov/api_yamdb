@@ -1,26 +1,46 @@
-from rest_framework import filters, permissions, viewsets
+from requests import Response
 from rest_framework.generics import get_object_or_404
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
-from api.permissions import IsModeratorPermission, IsContentPermission
+from api.permissions import IsModeratorPermission
 from api.serializers import CategoriesSerializer, GenresSerializer, \
     TitlesSerializer, ReviewsSerializer, СommentsSerializer, UsersSerializer
 
 from reviews.models import Category, Genre, Title, Review, Comment, User
 
+from rest_framework import viewsets
+
+from rest_framework.decorators import action
+
 
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UsersSerializer
-    pagination_class = LimitOffsetPagination
-    permission_classes = (IsAdminUser,)
+    permission_classes = (IsAdminUser, IsModeratorPermission, IsAuthenticated)
+
+
+    @action(
+        detail=False,
+        methods=['get', 'patch'],
+        permission_classes=[IsModeratorPermission],
+        name='me'
+    )
+    def get_my_profile(self, request):
+        user = self.request.user
+        if request.method == "GET":
+            serializer = UsersSerializer(user)
+            return Response(serializer.data)
+        if request.method == "PATCH":
+            serializer = UsersSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                user.save()
+                return Response(serializer.data)
+            raise serializer.ValidationError("Данные неверны!")
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitlesSerializer
-    pagination_class = LimitOffsetPagination
     permission_classes = (IsModeratorPermission,)
 
     def perform_create(self, serializer):
@@ -31,21 +51,18 @@ class TitlesViewSet(viewsets.ModelViewSet):
 class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategoriesSerializer
-    pagination_class = LimitOffsetPagination
-    permission_classes = (IsContentPermission,)
+    permission_classes = (IsAdminUser,)
 
 
 class GenresViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenresSerializer
-    pagination_class = LimitOffsetPagination
-    permission_classes = (IsContentPermission,)
+    permission_classes = (IsAdminUser,)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewsSerializer
-    pagination_class = LimitOffsetPagination
     permission_classes = (IsModeratorPermission,)
 
     def get_queryset(self):
@@ -62,7 +79,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = СommentsSerializer
-    pagination_class = LimitOffsetPagination
     permission_classes = (IsModeratorPermission,)
 
     def get_queryset(self):

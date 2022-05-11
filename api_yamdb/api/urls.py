@@ -9,31 +9,31 @@ from api.views import CategoriesViewSet, GenresViewSet, TitlesViewSet, \
     ReviewViewSet, CommentViewSet, UsersViewSet
 
 router = DefaultRouter()
+router.register("users", UsersViewSet)
 router.register("categories", CategoriesViewSet)
 router.register("genres", GenresViewSet)
-router.register("titles", TitlesViewSet)
+router.register('titles', TitlesViewSet)
 router.register(r"^reviews/(?P<title_id>\d+)/reviews", ReviewViewSet)
 router.register(
     r"^reviews/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments",
-    CommentViewSet)
-router.register("users", UsersViewSet)
-router.register("users", UsersViewSet)
+    CommentViewSet
+)
+
 
 urlpatterns = [
-    path("v1/", include(router.urls)),
+    path("", include(router.urls)),
     path(
-        "v1/auth/token/",
+        "auth/token/",
         TokenObtainPairView.as_view(),
-         name="token_obtain_pair"
+        name='token_obtain_pair'
     ),
     path(
-        "v1/auth/token/refresh/",
+        'auth/token/refresh/',
         TokenRefreshView.as_view(),
-         name="token_refresh"
+        name='token_refresh'
     ),
     path(
-        "v1/auth/token/verify/",
+        'auth/token/verify/',
         TokenVerifyView.as_view(),
-         name="token_verify"),
-
+        name='token_verify'),
 ]
