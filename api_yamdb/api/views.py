@@ -13,6 +13,7 @@ from .serializers import (
     GenreSerializer,
     CategorySerializer,
     TitleSerializer,
+    ListTitleSerializer,
     ReviewSerializer,
     CommentSerializer,
 )
@@ -45,9 +46,10 @@ class TitleViewSet(viewsets.ModelViewSet):
     filterset_fields = ('category', 'genre', 'name', 'year')
     ordering = ('rating',)
 
-    ##def perform_create(self, serializer):
-        ##if self.request.user.is_superuser or self.request.user.is_admin:
-            ##serializer.save(author=self.request.user)
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return ListTitleSerializer
+        return TitleSerializer
 
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()

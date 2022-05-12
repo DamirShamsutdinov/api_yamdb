@@ -46,6 +46,10 @@ class Title(models.Model):
         blank=True,
         related_name='titles'
     )
+    rating = models.IntegerField(
+        null=True,
+        default=None
+    )
     category = models.ForeignKey(
         Category,
         blank=True,
