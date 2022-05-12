@@ -1,24 +1,23 @@
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
-    TokenRefreshView, TokenVerifyView,
+    TokenRefreshView,
 )
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from api.views import CategoriesViewSet, GenresViewSet, TitlesViewSet, \
-    ReviewViewSet, CommentViewSet, UsersViewSet
+from api.views import CategoryViewSet, GenreViewSet, TitleViewSet, \
+    ReviewViewSet, CommentViewSet, UserViewSet
 
 router = DefaultRouter()
-router.register("users", UsersViewSet)
-router.register("categories", CategoriesViewSet)
-router.register("genres", GenresViewSet)
-router.register('titles', TitlesViewSet)
+router.register("users", UserViewSet)
+router.register("categories", CategoryViewSet)
+router.register("genres", GenreViewSet)
+router.register('titles', TitleViewSet)
 router.register(r"^reviews/(?P<title_id>\d+)/reviews", ReviewViewSet)
 router.register(
     r"^reviews/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments",
     CommentViewSet
 )
-
 
 urlpatterns = [
     path("", include(router.urls)),
@@ -32,8 +31,4 @@ urlpatterns = [
         TokenRefreshView.as_view(),
         name='token_refresh'
     ),
-    path(
-        'auth/token/verify/',
-        TokenVerifyView.as_view(),
-        name='token_verify'),
 ]

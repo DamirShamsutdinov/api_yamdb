@@ -1,40 +1,42 @@
 from rest_framework import serializers
+from rest_framework.response import Response
 from rest_framework.validators import UniqueValidator
+from rest_framework.views import APIView
 
 from reviews.models import Category, Genre, Title, Review, Comment, User
 
 
-class CategoriesSerializer(serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Category
 
 
-class GenresSerializer(serializers.ModelSerializer):
+class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Genre
 
 
-class TitlesSerializer(serializers.ModelSerializer):
+class TitleSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Title
 
 
-class ReviewsSerializer(serializers.ModelSerializer):
+class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Review
 
 
-class СommentsSerializer(serializers.ModelSerializer):
+class СommentSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Comment
 
 
-class UsersSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         required=True,
         validators=[UniqueValidator(queryset=User.objects.all())]
@@ -64,3 +66,13 @@ class UsersSerializer(serializers.ModelSerializer):
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
         )
         model = User
+
+
+# class SignupView(APIView):
+#     def post(self, request):
+#         email = request.data['email']
+#         username = request.data['username']
+#         serializer = UsersSerializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         serializer.save()
+#         return Response(serializer.data)
