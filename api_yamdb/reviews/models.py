@@ -1,25 +1,14 @@
 from django.db import models
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import UniqueConstraint
 from django.contrib.auth.models import AbstractUser
+from django.db.models import CheckConstraint, Q, UniqueConstraint
 
 
 
 class User(AbstractUser):
-    roles = ()
-    username = models.CharField(
-        max_length=150,
-        unique=True,
-    )
-    first_name = models.CharField(max_length=150, blank=True)
-    last_name = models.CharField(max_length=150, blank=True)
-    email = models.EmailField('Email', max_length=254, unique=True)
-    role = models.CharField(
-        max_length=150,
-        blank=True
-    )
-    bio = models.TextField()
-    def __str__(self):
-        return str(self.username)
+    bio = models.TextField('Биография', blank=True, )
+    role = models.CharField(max_length=16, default='user')
 
 
 class Genre(models.Model):
@@ -45,7 +34,7 @@ class Category(models.Model):
 
 
 class Title(models.Model):
-    id = models.AutoField(primary_key=True)
+    ##id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=30)
     year = models.PositiveIntegerField()
     description = models.TextField(
@@ -86,8 +75,27 @@ class Review(models.Model):
         auto_now_add=True,
     )
     text = models.TextField()
-    score = models.IntegerField()
-    
+    score = models.IntegerField(
+        validators=[
+            MinValueValidator(1, 'Минимальная оценка - 1'),
+            MaxValueValidator(10, 'Максимальная оценка - 10')
+        ]
+    )
+
+    class Meta:
+        constraints = [
+            CheckConstraint(
+                check=Q(score__range=(0, 10)),
+                name='valid_rate'
+            ),
+            UniqueConstraint(
+                fields=["author", "title"],
+                name='unique_review')
+        ]
+
+    def __str__(self):
+        return self.text
+
 
 class Comment(models.Model):
     id = models.AutoField(primary_key=True)
@@ -104,9 +112,11 @@ class Comment(models.Model):
     pub_date = models.DateTimeField(
         'Дата публикации комментария',
         auto_now_add=True,
-
     )
     text = models.TextField()
 
+    class Meta:
+        ordering = ('-pub_date',)
+
     def __str__(self):
-        return self.author
+        return self.text

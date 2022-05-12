@@ -8,12 +8,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = "__all__"
+        exclude = ('id', )
         model = Genre
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
-        fields = "__all__"
+        exclude = ('id', )
         model = Category
 
 class TitleSerializer(serializers.ModelSerializer):
