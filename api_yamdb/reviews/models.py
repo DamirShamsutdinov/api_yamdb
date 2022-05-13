@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.db.models import CheckConstraint, UniqueConstraint, Q
 
 ROLE = (('admin', 'admin'), ('moderator', 'moderator'), ('user', 'user'))
 
@@ -26,9 +28,13 @@ class Category(models.Model):
 
 
 class Title(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=150)
+    # id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=30)
     year = models.PositiveIntegerField()
+    description = models.TextField(
+        blank=True,
+        null=True,
+    )
     rating = models.IntegerField(
         'Рейтинг',
         default=None,
@@ -40,14 +46,14 @@ class Title(models.Model):
         Genre,
         blank=True,
         null=True,
-        related_name='genres',
+        related_name='titles',
         on_delete=models.SET_NULL
     )
     category = models.ForeignKey(
         Category,
         blank=True,
         null=True,
-        related_name='reviews',
+        related_name='titles',
         on_delete=models.SET_NULL
     )
 
@@ -56,51 +62,66 @@ class Title(models.Model):
 
 
 class Review(models.Model):
-    # a = list(range(11))
-    # RAITING = dict(zip(a, a))
-    RAITING = (
-        ('0', '0'), ('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'),
-        ('6', '6'), ('7', '7'), ('8', '8'), ('9', '9'), ('10', '10'))
-    id = models.AutoField(primary_key=True)
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
         related_name='reviews'
     )
-    text = models.TextField()
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='reviews'
     )
-    score = models.SmallIntegerField(
-        'Оценка',
-        default=0,
-        choices=RAITING
-    )
     pub_date = models.DateTimeField(
-        'Дата отзыва',
+        verbose_name='Дата отзыва',
         auto_now_add=True,
     )
+    text = models.TextField(
+        verbose_name='Текст отзыва',
+        help_text='Введите текст отзыва'
+    )
+    score = models.IntegerField(
+        validators=[
+            MinValueValidator(1, 'Минимальная оценка - 1'),
+            MaxValueValidator(10, 'Максимальная оценка - 10')
+        ]
+    )
+
+    class Meta:
+        ordering = ('-pub_date',)
+        constraints = [
+            CheckConstraint(
+                check=Q(score__range=(0, 10)),
+                name='valid_rate'
+            ),
+            UniqueConstraint(
+                fields=['author', 'title'],
+                name='unique_review')
+        ]
+
+    def __str__(self):
+        return self.text
 
 
 class Comment(models.Model):
-    id = models.AutoField(primary_key=True)
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
-        related_name='comments'
+        related_name='review'
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='comments'
+        related_name='author'
     )
     pub_date = models.DateTimeField(
-        'Дата комментария',
+        verbose_name='Дата публикации комментария',
         auto_now_add=True,
     )
     text = models.TextField()
 
+    class Meta:
+        ordering = ('-pub_date',)
+
     def __str__(self):
-        return self.author
+        return self.text

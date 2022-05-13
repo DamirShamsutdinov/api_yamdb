@@ -115,13 +115,15 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
 }
 
-EMAIL_USE_TSL = True
-EMAIL_HOST = 'smtp.yandex.ru'
-EMAIL_HOST_USER = 'd4mirshd@yandex.ru'
-EMAIL_HOST_PASSWORD = os.getenv('password2')
-EMAIL_PORT = 465
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_USE_TSL = True
+# EMAIL_HOST = 'smtp.yandex.ru'
+# EMAIL_HOST_USER = 'd4mirshd@yandex.ru'
+# EMAIL_HOST_PASSWORD = os.getenv('password2')
+# EMAIL_PORT = 465
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
