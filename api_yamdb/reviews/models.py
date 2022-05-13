@@ -29,8 +29,12 @@ class Title(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=150)
     year = models.PositiveIntegerField()
-    rating = models.IntegerField(default=None, null=True,
-                                 blank=True)  # нужно отдельную вьюху сделать к нему, среднюю оценку от 1 до 10 по оценки(score) в отзывах(Review)
+    rating = models.IntegerField(
+        'Рейтинг',
+        default=None,
+        null=True,
+        blank=True
+    )  # нужно отдельную вьюху
     description = models.TextField()
     genre = models.ForeignKey(
         Genre,
@@ -69,8 +73,11 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         related_name='reviews'
     )
-    score = models.SmallIntegerField('Рейтинг', default=0,
-                                     choices=RAITING)
+    score = models.SmallIntegerField(
+        'Оценка',
+        default=0,
+        choices=RAITING
+    )
     pub_date = models.DateTimeField(
         'Дата отзыва',
         auto_now_add=True,

@@ -1,9 +1,6 @@
 from rest_framework import serializers
-from rest_framework.response import Response
 from rest_framework.validators import UniqueValidator
-from rest_framework.views import APIView
-
-from reviews.models import Category, Genre, Title, Review, Comment, User
+from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -30,7 +27,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
 
 
-class СommentSerializer(serializers.ModelSerializer):
+class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Comment
@@ -68,11 +65,18 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
 
 
-# class SignupView(APIView):
-#     def post(self, request):
-#         email = request.data['email']
-#         username = request.data['username']
-#         serializer = UsersSerializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         serializer.save()
-#         return Response(serializer.data)
+class SignupSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
+
+    class Meta:
+        model = User
+        fields = ('username', 'email')
+
+        # def validate(self, attrs):
+        #     if attrs['username'] == 'me':
+        #         raise serializers.ValidationError(
+        #             'Запрещено имя "me", придумайте другое имя!')
+        #     return attrs

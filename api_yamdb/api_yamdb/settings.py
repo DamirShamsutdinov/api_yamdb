@@ -1,9 +1,8 @@
 import os
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 from datetime import timedelta
 
-import django.core.mail.backends.smtp
+# import django.core.mail.backends.smtp
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -42,7 +41,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'api_yamdb.urls'
 
-TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
+TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
