@@ -4,9 +4,12 @@ from django.db import models
 from django.db.models import CheckConstraint, Q, UniqueConstraint
 
 
+ROLE = (('admin', 'admin'), ('moderator', 'moderator'), ('user', 'user'))
+
+
 class User(AbstractUser):
     bio = models.TextField('Биография', blank=True, )
-    role = models.CharField(max_length=16, default='user')
+    role = models.CharField(max_length=16, choices=ROLE, default='user')
 
 
 class Genre(models.Model):
@@ -32,7 +35,6 @@ class Category(models.Model):
 
 
 class Title(models.Model):
-    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=30)
     year = models.PositiveIntegerField()
     description = models.TextField(blank=True)
@@ -54,7 +56,6 @@ class Title(models.Model):
 
 
 class Review(models.Model):
-    id = models.AutoField(primary_key=True)
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -66,10 +67,13 @@ class Review(models.Model):
         related_name='reviews'
     )
     pub_date = models.DateTimeField(
-        'Дата отзыва',
+        verbose_name='Дата отзыва',
         auto_now_add=True,
     )
-    text = models.TextField()
+    text = models.TextField(
+        verbose_name='Текст отзыва',
+        help_text='Введите текст отзыва'
+    )
     score = models.IntegerField(
         validators=[
             MinValueValidator(1, 'Минимальная оценка - 1'),
@@ -78,13 +82,14 @@ class Review(models.Model):
     )
 
     class Meta:
+        ordering = ('-pub_date',)
         constraints = [
             CheckConstraint(
                 check=Q(score__range=(0, 10)),
                 name='valid_rate'
             ),
             UniqueConstraint(
-                fields=["author", "title"],
+                fields=['author', 'title'],
                 name='unique_review')
         ]
 
@@ -93,7 +98,6 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
-    id = models.AutoField(primary_key=True)
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
@@ -105,7 +109,7 @@ class Comment(models.Model):
         related_name='author'
     )
     pub_date = models.DateTimeField(
-        'Дата публикации комментария',
+        verbose_name='Дата публикации комментария',
         auto_now_add=True,
     )
     text = models.TextField()
