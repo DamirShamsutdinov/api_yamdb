@@ -3,7 +3,8 @@ from django.core.mail import send_mail
 from django.db.models import Avg
 from rest_framework.exceptions import ValidationError
 
-from api.permissions import IsAdminUserOrReadOnly, IsModeratorPermission
+from api.permissions import IsAdminUserOrReadOnly, IsModeratorPermission, \
+    IsAdminOrAnonymousUser
 from api.serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
                              SignupSerializer, TitleSerializer, UserSerializer,
@@ -68,18 +69,21 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = (IsAdminUser,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
 
-
-    # @action(detail=False, methods=['POST'])
-    # def create(self, request, *args, **kwargs):
-    #     serializer = self.get_serializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     self.perform_create(serializer)
-    #     headers = self.get_success_headers(serializer.data)
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
+    # пытаюсь сделать доступ на создание Юзера не только для Админа но и любому
+    @action(
+        detail=False,
+        methods=['POST'],
+        permission_classes=[IsAdminOrAnonymousUser],
+    )
+    def create_profile(self, request):
+        user = self.request.user
+        serializer = UserSerializer(user)
+        if request.method == 'POST':
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
         detail=False,
@@ -92,7 +96,8 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(user)
         if request.method == 'GET':
             return Response(serializer.data, status=status.HTTP_200_OK)
-        serializer = UserSerializer(self.request.user, data=request.data, partial=True)
+        serializer = UserSerializer(self.request.user, data=request.data,
+                                    partial=True)
         if serializer.is_valid(raise_exception=True):
             if serializer.validated_data.get('role'):
                 raise ValidationError('Нельзя менять самому себе роль!')
@@ -104,7 +109,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (IsModeratorPermission,)
+    permission_classes = (IsAdminUserOrReadOnly,)
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     filterset_fields = ('category', 'genre', 'name', 'year')
     ordering = ('rating',)
@@ -135,7 +140,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = [IsModeratorPermission]
+    permission_classes = (IsModeratorPermission,)
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
@@ -162,7 +167,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = [IsModeratorPermission,]
+    permission_classes = (IsModeratorPermission,)
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
@@ -175,4 +180,3 @@ class CommentViewSet(viewsets.ModelViewSet):
         review_id = self.kwargs.get('id')
         review = get_object_or_404(Review, pk=review_id)
         serializer.save(author=self.request.user, review=review)
-
