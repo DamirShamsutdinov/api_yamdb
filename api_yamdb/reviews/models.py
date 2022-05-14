@@ -7,11 +7,20 @@ ROLE = (('admin', 'admin'), ('moderator', 'moderator'), ('user', 'user'))
 
 
 class User(AbstractUser):
+    """Модель Пользователя"""
     bio = models.TextField('Биография', blank=True, )
-    role = models.CharField(max_length=16, choices=ROLE, default='user')
+    role = models.CharField('Роль', max_length=16, choices=ROLE,
+                            default='user')
+    confirmation_code = models.CharField(
+        'Код потдверждения',
+        max_length=36,
+        null=True,
+        blank=True
+    )
 
 
 class Genre(models.Model):
+    """Модель Жанров"""
     name = models.CharField(max_length=256)
     slug = models.SlugField(max_length=50, unique=True)
 
@@ -20,6 +29,7 @@ class Genre(models.Model):
 
 
 class Category(models.Model):
+    """Модель Категорий"""
     name = models.CharField(max_length=256)
     slug = models.SlugField(max_length=50, unique=True)
 
@@ -28,7 +38,7 @@ class Category(models.Model):
 
 
 class Title(models.Model):
-    # id = models.AutoField(primary_key=True)
+    """Модель Произведений"""
     name = models.CharField(max_length=30)
     year = models.PositiveIntegerField()
     description = models.TextField(
@@ -40,7 +50,7 @@ class Title(models.Model):
         default=None,
         null=True,
         blank=True
-    )  # нужно отдельную вьюху
+    )
     description = models.TextField()
     genre = models.ForeignKey(
         Genre,
@@ -62,6 +72,7 @@ class Title(models.Model):
 
 
 class Review(models.Model):
+    """Модель Отзывов"""
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -104,6 +115,7 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
+    """Модель Комментариев"""
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,

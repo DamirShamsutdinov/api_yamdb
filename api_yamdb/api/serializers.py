@@ -1,12 +1,15 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.validators import UniqueValidator
+from rest_framework_simplejwt.serializers import TokenObtainSerializer
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
-        exclude = ('id', )
+        exclude = ('id',)
         lookup_field = 'slug'
         model = Category
 
@@ -14,7 +17,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         lookup_field = 'slug'
-        exclude = ('id', )
+        exclude = ('id',)
         model = Genre
 
 
@@ -44,6 +47,7 @@ class ListTitleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
         fields = '__all__'
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
@@ -97,6 +101,7 @@ class UserSerializer(serializers.ModelSerializer):
                 'Такой email уже зарегистрирован!')
         return attrs
 
+    # проверка на изменение роли если не Админ
     def update(self, instance, validated_data):
         instance.username = validated_data.get('username', instance.email)
         instance.email = validated_data.get('email', instance.email)
@@ -107,7 +112,8 @@ class UserSerializer(serializers.ModelSerializer):
         if not is_superuser:
             raise serializers.ValidationError('Роль юзера менять нельзя!')
         instance.role = validated_data.get('role', instance.created)
-        # instance.confirmation_code = validated_data.get('email', instance.confirmation_code)
+        instance.confirmation_code = validated_data.get('email',
+                                                        instance.confirmation_code)
         instance.save()
         return instance
 
@@ -120,7 +126,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 class SignupSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
-        required=True,
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
 
@@ -128,8 +133,23 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ('username', 'email')
 
-        # def validate(self, attrs):
-        #     if attrs['username'] == 'me':
-        #         raise serializers.ValidationError(
-        #             'Запрещено имя "me", придумайте другое имя!')
-        #     return attrs
+
+class TokenSerializer(TokenObtainSerializer):
+    token_class = AccessToken
+    # confirmation_code = serializers.CharField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['confirmation_code'] = serializers.CharField(required=False)
+        self.fields['password'] = serializers.HiddenField(default='')
+
+    def validate(self, attrs):
+        self.user = get_object_or_404(User, username=attrs['username'])
+        if self.user.confirmation_code != attrs['confirmation_code']:
+            raise serializers.ValidationError(
+                'Неверный код подтверждения',
+                # status=status.HTTP_400_BAD_REQUEST
+            )
+        data = str(self.get_token(self.user))
+
+        return {'token': data}
