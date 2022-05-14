@@ -1,6 +1,4 @@
-
 from rest_framework import permissions
-from rest_framework.permissions import IsAdminUser, SAFE_METHODS
 
 from reviews.models import User
 
@@ -15,11 +13,12 @@ class IsModeratorPermission(permissions.BasePermission):
         return obj.author == request.user or obj.author == MODERATOR
 
 
-class IsAdminUserOrReadOnly(IsAdminUser):
+class IsAdminUserOrReadOnly(permissions.IsAdminUser):
 
     def has_permission(self, request, view):
-        is_admin = super().has_permission(request, view)
-        return request.method in SAFE_METHODS or is_admin
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return request.user.is_superuser
 
 
 class IsUserAdminModeratorOrReadOnly(permissions.BasePermission):
