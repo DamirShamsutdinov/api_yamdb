@@ -6,9 +6,12 @@ from django.db.models import CheckConstraint, Q, UniqueConstraint
 
 
 
+ROLE = (('admin', 'admin'), ('moderator', 'moderator'), ('user', 'user'))
+
+
 class User(AbstractUser):
     bio = models.TextField('Биография', blank=True, )
-    role = models.CharField(max_length=16, default='user')
+    role = models.CharField(max_length=16, choices=ROLE, default='user')
 
 
 class Genre(models.Model):
@@ -34,7 +37,6 @@ class Category(models.Model):
 
 
 class Title(models.Model):
-    ##id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=30)
     year = models.PositiveIntegerField()
     description = models.TextField(

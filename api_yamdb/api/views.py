@@ -1,10 +1,12 @@
 from django.shortcuts import get_object_or_404, render
+from rest_framework import status
+from rest_framework.response import Response
 from rest_framework import viewsets, filters, mixins
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from rest_framework.permissions import IsAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
 
-from api.permissions import IsModeratorPermission, IsContentPermission
+from api.permissions import IsModeratorPermission, IsAdminOrReadOnly, IsUserAdminModeratorOrReadOnly
 
 from reviews.models import User, Genre, Category, Title, Review, Comment
 
@@ -23,27 +25,39 @@ class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (IsContentPermission,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter, )
     search_fields = ('name',)
     lookup_field = 'slug'
+
+    def retrieve(self, request,* args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def update(self, request,* args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (IsContentPermission,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter, )
-    search_fields = ('name',)
+    search_fields = ('name', )
     lookup_field = 'slug'
+
+    def retrieve(self, request,* args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def update(self, request,* args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    pagination_class = LimitOffsetPagination
-    permission_classes = (IsModeratorPermission,)
+    pagination_class = PageNumberPagination
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     filterset_fields = ('category', 'genre', 'name', 'year')
     ordering = ('rating',)
