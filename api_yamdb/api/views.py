@@ -20,7 +20,7 @@ from rest_framework.decorators import action
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 
-class TokenViewSet(TokenObtainPairView):
+class TokenView(TokenObtainPairView):
     """Вьюсет для получения ТОКЕНА"""
     serializer_class = TokenSerializer
 
