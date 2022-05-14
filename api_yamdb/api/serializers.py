@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
@@ -135,16 +135,21 @@ class SignupSerializer(serializers.ModelSerializer):
 
 
 class TokenSerializer(TokenObtainSerializer):
-    token_class = RefreshToken
+    token_class = AccessToken
+    # confirmation_code = serializers.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["password"] = serializers.HiddenField(default='')
+        self.fields['confirmation_code'] = serializers.CharField(required=False)
+        self.fields['password'] = serializers.HiddenField(default='')
 
     def validate(self, attrs):
-        user = get_object_or_404(User, username='username')
-        if user.username == attrs['username']:
-            raise serializers.ValidationError('Юзер не зарегестрирован!')
-        data = str(self.get_token(user))
+        self.user = get_object_or_404(User, username=attrs['username'])
+        if self.user.confirmation_code != attrs['confirmation_code']:
+            raise serializers.ValidationError(
+                'Неверный код подтверждения',
+                # status=status.HTTP_400_BAD_REQUEST
+            )
+        data = str(self.get_token(self.user))
 
         return {'token': data}
