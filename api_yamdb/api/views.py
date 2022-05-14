@@ -4,7 +4,7 @@ from django.db.models import Avg
 from rest_framework.exceptions import ValidationError
 
 from api.permissions import IsAdminUserOrReadOnly, IsModeratorPermission, \
-    IsUserAdminModeratorOrReadOnly
+    IsUserAdminModeratorOrReadOnly, IsModeratorPermission2
 from api.serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
                              SignupSerializer, TitleSerializer, UserSerializer,
@@ -86,7 +86,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(
         detail=False,
         methods=['GET', 'PATCH'],
-        permission_classes=[IsModeratorPermission],
+        permission_classes=[IsModeratorPermission2],
         name='me'
     )
     def get_my_profile(self, request):
