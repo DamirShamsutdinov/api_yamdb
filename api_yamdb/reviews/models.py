@@ -28,7 +28,6 @@ class Category(models.Model):
 
 
 class Title(models.Model):
-    # id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=30)
     year = models.PositiveIntegerField()
     description = models.TextField(
@@ -40,7 +39,7 @@ class Title(models.Model):
         default=None,
         null=True,
         blank=True
-    )  # нужно отдельную вьюху
+    )
     description = models.TextField()
     genre = models.ForeignKey(
         Genre,

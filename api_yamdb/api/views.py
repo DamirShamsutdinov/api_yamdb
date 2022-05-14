@@ -1,48 +1,85 @@
-import smtplib
-import os
 import uuid
-
-import instance as instance
 from django.core.mail import send_mail
 from django.db.models import Avg
 from rest_framework.exceptions import ValidationError
 
 from api.permissions import IsAdminUserOrReadOnly, IsModeratorPermission, \
-    IsUserAdminModeratorOrReadOnly
+    IsUserAdminModeratorOrReadOnly, IsNotAuthenticated
 from api.serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
                              SignupSerializer, TitleSerializer, UserSerializer,
-                             ListTitleSerializer)
-from rest_framework import filters, status, viewsets
+                             ListTitleSerializer, TokenSerializer)
+from rest_framework import filters, status, viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from reviews.models import Category, Comment, Genre, Review, Title, User
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
 
-class SignUpViewSet(viewsets.ModelViewSet):
-    lookup_field = 'username'
+
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+
+class TokenViewSet(TokenObtainPairView, TokenObtainPairSerializer):
+    """Вьюсет для получения ТОКЕНА"""
     queryset = User.objects.all()
-    serializer_class = SignupSerializer
+    serializer_class = TokenSerializer
+    permission_classes = (IsNotAuthenticated,)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True) #должна быть 404, а у меня 400 в случае ошибки данных
-        if request.data['username'] == 'me':
-            Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        self.perform_create(serializer)
+        token = serializer.initial_data.get('token')
+        if not token:
+            raise ValidationError('Ошибка в отправке токена')
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        instance.set_unusable_password()
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK,
+                        headers=headers)
+
+
+class SignUpViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
+    """Вьюсет для регистрации пользователя"""
+    queryset = User.objects.all()
+    serializer_class = SignupSerializer
+    permission_classes = (AllowAny,)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        username = serializer.initial_data.get('username')
+        email = serializer.initial_data.get('email')
+        if username == 'me':
+            raise ValidationError('Запрещено имя "me", придумайте другое имя!')
+        if not (username and email):
+            serializer.is_valid(raise_exception=True)
+
+        if User.objects.filter(username=username).exists():
+            instance = User.objects.get(username=username)
+            if instance.email != email:
+                raise ValidationError('У данного пользователя другая почта!')
+            serializer.is_valid(raise_exception=False)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        instance.set_unusable_password()
+        instance.save()
+        email = serializer.validated_data['email']
+
         code = uuid.uuid4()
         send_mail(
             'КОД ПОДТВЕРЖДЕНИЯ',
             f'Ваш код подтверждения!\n{code}',
-            'I_am_Groot@gmail.com',
-            ['ToMyFriends@example.com'],
+            'from@example.com',
+            [email],
             fail_silently=False,
         )
-        # instance.confirmation_code = code
-        # instance.save()
+        instance.confirmation_code = code
+        instance.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -54,6 +91,16 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
 
+
+    # @action(detail=False, methods=['POST'])
+    # def create(self, request, *args, **kwargs):
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     self.perform_create(serializer)
+    #     headers = self.get_success_headers(serializer.data)
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
     @action(
         detail=False,
         methods=['GET', 'PATCH'],
@@ -62,13 +109,15 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def get_my_profile(self, request):
         user = self.request.user
-        if request.method == 'PATCH':
-            serializer = UserSerializer(user, data=request.data, partial=True)
-            if serializer.is_valid(raise_exception=True):
-                serializer.save()
-                return Response(serializer.data)
         serializer = UserSerializer(user)
-        return Response(serializer.data)
+        if request.method == 'GET':
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = UserSerializer(self.request.user, data=request.data, partial=True)
+        if serializer.is_valid(raise_exception=True):
+            if serializer.validated_data.get('role'):
+                raise ValidationError('Нельзя менять самому себе роль!')
+            serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -91,7 +140,7 @@ class GenreViewSet(viewsets.ModelViewSet):
     serializer_class = GenreSerializer
     pagination_class = LimitOffsetPagination
     permission_classes = (IsAdminUserOrReadOnly,)
-    filter_backends = (filters.SearchFilter, )
+    filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
 
@@ -100,7 +149,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     pagination_class = LimitOffsetPagination
     permission_classes = (IsAdminUserOrReadOnly,)
-    filter_backends = (filters.SearchFilter, )
+    filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
 
@@ -131,8 +180,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = [IsUserAdminModeratorOrReadOnly]
+    permission_classes = [IsUserAdminModeratorOrReadOnly,]
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
@@ -145,3 +195,4 @@ class CommentViewSet(viewsets.ModelViewSet):
         review_id = self.kwargs.get('id')
         review = get_object_or_404(Review, pk=review_id)
         serializer.save(author=self.request.user, review=review)
+
