@@ -12,7 +12,7 @@ from api.serializers import (CategorySerializer, CommentSerializer,
 from rest_framework import filters, status, viewsets, mixins
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAdminUser, AllowAny
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from reviews.models import Category, Comment, Genre, Review, Title, User
 from django_filters.rest_framework import DjangoFilterBackend
@@ -69,7 +69,6 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsAdminUser,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
 

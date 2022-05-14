@@ -21,8 +21,9 @@ router.register(
     basename='comments'
 )
 router.register('auth/signup', SignUpViewSet)
-router.register('auth/token', TokenViewSet, basename='token')
+
 
 urlpatterns = [
-    path('v1/', include(router.urls)),
+    path('', include(router.urls)),
+    path('auth/token', TokenViewSet),
 ]

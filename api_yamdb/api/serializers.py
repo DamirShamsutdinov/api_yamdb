@@ -143,7 +143,7 @@ class TokenSerializer(TokenObtainSerializer):
 
     def validate(self, attrs):
         user = get_object_or_404(User, username='username')
-        if user.name == attrs['username']:
+        if user.username == attrs['username']:
             raise serializers.ValidationError('Юзер не зарегестрирован!')
         data = str(self.get_token(user))
 
