@@ -1,11 +1,7 @@
-from django.contrib.auth.models import update_last_login
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
-from rest_framework.fields import HiddenField
-from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueValidator
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, \
-    TokenObtainSerializer
+from rest_framework_simplejwt.serializers import TokenObtainSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import Category, Comment, Genre, Review, Title, User
@@ -138,28 +134,17 @@ class SignupSerializer(serializers.ModelSerializer):
         fields = ('username', 'email')
 
 
-class TokenSerializer(TokenObtainPairSerializer, TokenObtainSerializer):
+class TokenSerializer(TokenObtainSerializer):
     token_class = RefreshToken
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields[self.username_field] = serializers.CharField()
-        self.fields["password"] = HiddenField(default='')
-
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token['name'] = user.name
-        return token
+        self.fields["password"] = serializers.HiddenField(default='')
 
     def validate(self, attrs):
         user = get_object_or_404(User, username='username')
-        if user['username'] == attrs['username']:
+        if user.field.username == attrs:
             raise serializers.ValidationError('Юзер не зарегестрирован!')
-        data = super().validate(attrs)
-        refresh = self.get_token(self.user)
-        data["access"] = str(refresh.access_token)
-        if api_settings.UPDATE_LAST_LOGIN:
-            update_last_login(None, self.user)
+        data = str(self.get_token(user))
 
         return {'token': data}

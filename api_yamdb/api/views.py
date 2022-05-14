@@ -4,43 +4,25 @@ from django.db.models import Avg
 from rest_framework.exceptions import ValidationError
 
 from api.permissions import IsAdminUserOrReadOnly, IsModeratorPermission, \
-    IsUserAdminModeratorOrReadOnly, IsNotAuthenticated
+    IsUserAdminModeratorOrReadOnly
 from api.serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
                              SignupSerializer, TitleSerializer, UserSerializer,
                              ListTitleSerializer, TokenSerializer)
 from rest_framework import filters, status, viewsets, mixins
-from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAdminUser, AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework.response import Response
 from reviews.models import Category, Comment, Genre, Review, Title, User
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
-
-
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 
-class TokenViewSet(TokenObtainPairView, TokenObtainPairSerializer):
+class TokenViewSet(TokenObtainPairView):
     """Вьюсет для получения ТОКЕНА"""
-    queryset = User.objects.all()
     serializer_class = TokenSerializer
-    permission_classes = (IsNotAuthenticated,)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        token = serializer.initial_data.get('token')
-        if not token:
-            raise ValidationError('Ошибка в отправке токена')
-        serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
-        instance.set_unusable_password()
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_200_OK,
-                        headers=headers)
 
 
 class SignUpViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
