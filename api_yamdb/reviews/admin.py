@@ -20,12 +20,12 @@ class TitleAdmin(admin.ModelAdmin):
 
 
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'author', 'pub_date', 'text', 'score')
+    list_dispaly = ('__all__',)
     empty_value_display = '-пусто-'
 
 
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'review', 'author', 'pub_date', 'text')
+    list_dispaly = ('__all__',)
     empty_value_display = '-пусто-'
 
 
