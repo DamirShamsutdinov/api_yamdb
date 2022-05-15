@@ -9,23 +9,20 @@ from reviews.models import Category, Comment, Genre, Review, Title, User
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
-        exclude = ('id',)
-        lookup_field = 'slug'
         model = Category
+        exclude = ('id',)
 
 
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
-        lookup_field = 'slug'
-        exclude = ('id',)
         model = Genre
+        exclude = ('id',)
 
 
 class TitleSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
-        slug_field='slug',
-        many=True,
-        queryset=Genre.objects.all()
+        queryset=Genre.objects.all(),
+        slug_field='slug', many=True
     )
     category = serializers.SlugRelatedField(
         slug_field='slug',
@@ -38,16 +35,14 @@ class TitleSerializer(serializers.ModelSerializer):
 
 
 class ListTitleSerializer(serializers.ModelSerializer):
-    rating = serializers.IntegerField(
-        read_only=True
-    )
-    genre = GenreSerializer(many=True)
-    category = CategorySerializer()
+    category = CategorySerializer(read_only=True)
+    genre = GenreSerializer(read_only=True, many=True)
+    rating = serializers.IntegerField(read_only=True, required=False)
 
     class Meta:
         model = Title
         fields = '__all__'
-
+        
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(

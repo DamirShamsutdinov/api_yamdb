@@ -4,7 +4,7 @@ from django.db.models import Avg
 from rest_framework.exceptions import ValidationError
 
 from api.permissions import IsModeratorPermission, \
-    IsAdminOrAnonymousUser, IsAdminOrReadOnly
+    IsAdminOrAnonymousUser, IsAdminUserOrReadOnly
 from api.serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
                              SignupSerializer, TitleSerializer, UserSerializer,
@@ -108,24 +108,26 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
-    serializer_class = TitleSerializer
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')
+    )
     pagination_class = PageNumberPagination
-    permission_classes = (IsAdminOrReadOnly,)
+    ##permission_classes = (IsAdminUserOrReadOnly,)
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     filterset_fields = ('category', 'genre', 'name', 'year')
-    ordering = ('rating',)
+    ordering = ('name',)
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return ListTitleSerializer
+        return TitleSerializer
 
 
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (IsAdminOrReadOnly,)
+    ##permission_classes = (IsAdminUserOrReadOnly,)
     filter_backends = (filters.SearchFilter, )
     search_fields = ('name',)
     lookup_field = 'slug'
@@ -141,7 +143,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (IsAdminOrReadOnly,)
+    ##permission_classes = (IsAdminUserOrReadOnly,)
     filter_backends = (filters.SearchFilter, )
     search_fields = ('name', )
     lookup_field = 'slug'
