@@ -39,20 +39,21 @@ class Category(models.Model):
 
 class Title(models.Model):
     """Модель Произведений"""
-    name = models.CharField(max_length=30)
-    year = models.PositiveIntegerField()
-    description = models.TextField(
-        blank=True,
-        null=True,
-    )
+    name = models.CharField('Название', max_length=30)
+    year = models.PositiveIntegerField('Год издания',)
     rating = models.IntegerField(
         'Рейтинг',
         default=None,
         null=True,
         blank=True
     )
-    description = models.TextField()
+    description = models.TextField(
+        'Описание',
+        blank=True,
+        null=True,
+    )
     genre = models.ForeignKey(
+        'Жанр',
         Genre,
         blank=True,
         null=True,
@@ -60,6 +61,7 @@ class Title(models.Model):
         on_delete=models.SET_NULL
     )
     category = models.ForeignKey(
+        'Категория',
         Category,
         blank=True,
         null=True,
