@@ -1,23 +1,24 @@
 import uuid
+
+from api.permissions import (IsAdminOrAnonymousUser, IsAdminOrReadOnly,
+                             IsModeratorPermission)
+from api.serializers import (CategorySerializer, CommentSerializer,
+                             GenreSerializer, ListTitleSerializer,
+                             ReviewSerializer, SignupSerializer,
+                             TitleSerializer, TokenSerializer, UserSerializer)
 from django.core.mail import send_mail
 from django.db.models import Avg
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-
-from api.permissions import IsAdminUserOrReadOnly, IsModeratorPermission, \
-    IsAdminOrAnonymousUser
-from api.serializers import (CategorySerializer, CommentSerializer,
-                             GenreSerializer, ReviewSerializer,
-                             SignupSerializer, TitleSerializer, UserSerializer,
-                             ListTitleSerializer, TokenSerializer)
-from rest_framework import filters, status, viewsets, mixins
 from rest_framework.generics import get_object_or_404
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.pagination import (LimitOffsetPagination,
+                                       PageNumberPagination)
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
-from reviews.models import Category, Comment, Genre, Review, Title, User
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.decorators import action
 from rest_framework_simplejwt.views import TokenObtainPairView
+from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 class TokenView(TokenObtainPairView):
@@ -66,6 +67,7 @@ class SignUpViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """Вьюсет для доступа к Пользовател(-ю/ям)"""
     lookup_field = 'username'
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -91,7 +93,7 @@ class UserViewSet(viewsets.ModelViewSet):
         permission_classes=[IsModeratorPermission],
         name='me'
     )
-    def get_my_profile(self, request):
+    def my_profile(self, request):
         user = self.request.user
         serializer = UserSerializer(user)
         if request.method == 'GET':
@@ -106,13 +108,14 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
-    serializer_class = TitleSerializer
-    pagination_class = LimitOffsetPagination
-    permission_classes = (IsAdminUserOrReadOnly,)
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')
+    )
+    pagination_class = PageNumberPagination
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     filterset_fields = ('category', 'genre', 'name', 'year')
-    ordering = ('rating',)
+    ordering = ('name',)
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -124,18 +127,32 @@ class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (IsAdminUserOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (filters.SearchFilter, )
     search_fields = ('name',)
+    lookup_field = 'slug'
+
+    def retrieve(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def update(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (IsAdminUserOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (filters.SearchFilter, )
+    search_fields = ('name', )
+    lookup_field = 'slug'
+
+    def retrieve(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def update(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

@@ -1,31 +1,28 @@
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-
+from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
-        exclude = ('id',)
-        lookup_field = 'slug'
         model = Category
+        exclude = ('id',)
 
 
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
-        lookup_field = 'slug'
-        exclude = ('id',)
         model = Genre
+        exclude = ('id',)
 
 
 class TitleSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
-        slug_field='slug',
-        many=True,
-        queryset=Genre.objects.all()
+        queryset=Genre.objects.all(),
+        slug_field='slug', many=True
     )
     category = serializers.SlugRelatedField(
         slug_field='slug',
@@ -38,15 +35,17 @@ class TitleSerializer(serializers.ModelSerializer):
 
 
 class ListTitleSerializer(serializers.ModelSerializer):
-    rating = serializers.IntegerField(
-        read_only=True
-    )
-    genre = GenreSerializer(many=True)
-    category = CategorySerializer()
+    category = CategorySerializer(read_only=True)
+    genre = GenreSerializer(read_only=True, many=True)
+    rating = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Title
         fields = '__all__'
+
+    def get_rating(self, obj):
+        # return obj.reviews.all().aggregate(Avg('reviews__score'))
+        return obj.reviews.all().aggregate(Avg('reviews__score'))
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -63,7 +62,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = '__all__'
         model = Review
 
-    def ReviewValidation(self):
+    def review_validation(self):
         title_id = self.kwargs.get('id')
         title = get_object_or_404(Title, pk=title_id)
         reviews = self.request.user.reviews
@@ -94,6 +93,8 @@ class UserSerializer(serializers.ModelSerializer):
         required=True,
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
+    role = serializers.CharField(read_only=True,)
+
 
     def validate_email(self, attrs):
         if attrs == self.context['request'].user:
@@ -101,21 +102,10 @@ class UserSerializer(serializers.ModelSerializer):
                 'Такой email уже зарегистрирован!')
         return attrs
 
-    # проверка на изменение роли если не Админ
-    def update(self, instance, validated_data):
-        instance.username = validated_data.get('username', instance.email)
-        instance.email = validated_data.get('email', instance.email)
-        instance.first_name = validated_data.get('first_name', instance.email)
-        instance.last_name = validated_data.get('last_name', instance.content)
-        instance.bio = validated_data.get('bio', instance.created)
-        is_superuser = self.user.is_superuser
-        if not is_superuser:
+    def validate_role(self, attrs):
+        if attrs:
             raise serializers.ValidationError('Роль юзера менять нельзя!')
-        instance.role = validated_data.get('role', instance.created)
-        instance.confirmation_code = validated_data.get('email',
-                                                        instance.confirmation_code)
-        instance.save()
-        return instance
+        return attrs
 
     class Meta:
         fields = (
@@ -136,20 +126,19 @@ class SignupSerializer(serializers.ModelSerializer):
 
 class TokenSerializer(TokenObtainSerializer):
     token_class = AccessToken
+
     # confirmation_code = serializers.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['confirmation_code'] = serializers.CharField(required=False)
+        self.fields['confirmation_code'] = serializers.CharField(
+            required=False)
         self.fields['password'] = serializers.HiddenField(default='')
 
     def validate(self, attrs):
         self.user = get_object_or_404(User, username=attrs['username'])
         if self.user.confirmation_code != attrs['confirmation_code']:
-            raise serializers.ValidationError(
-                'Неверный код подтверждения',
-                # status=status.HTTP_400_BAD_REQUEST
-            )
+            raise serializers.ValidationError('Неверный код подтверждения')
         data = str(self.get_token(self.user))
 
         return {'token': data}
