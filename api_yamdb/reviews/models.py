@@ -41,32 +41,22 @@ class Title(models.Model):
     """Модель Произведений"""
     name = models.CharField('Название', max_length=30)
     year = models.PositiveIntegerField('Год издания',)
-    rating = models.IntegerField(
-        'Рейтинг',
-        default=None,
-        null=True,
-        blank=True
-    )
     description = models.TextField(
-        'Описание',
         blank=True,
         null=True,
     )
-    genre = models.ForeignKey(
-        'Жанр',
+    genre = models.ManyToManyField(
         Genre,
         blank=True,
-        null=True,
-        related_name='titles',
-        on_delete=models.SET_NULL
+        related_name='titles'
     )
     category = models.ForeignKey(
-        'Категория',
         Category,
         blank=True,
         null=True,
         related_name='titles',
-        on_delete=models.SET_NULL
+        on_delete=models.SET_NULL,
+        verbose_name='Категория',
     )
 
     def __str__(self):
