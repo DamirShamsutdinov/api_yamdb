@@ -107,7 +107,7 @@ AUTH_USER_MODEL = 'users.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -120,12 +120,6 @@ REST_FRAMEWORK = {
     ]
 }
 
-# EMAIL_USE_TSL = True
-# EMAIL_HOST = 'smtp.yandex.ru'
-# EMAIL_HOST_USER = 'd4mirshd@yandex.ru'
-# EMAIL_HOST_PASSWORD = os.getenv('password2')
-# EMAIL_PORT = 465
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 

@@ -1,8 +1,8 @@
 from rest_framework import permissions
+from users.models import ADMIN, MODERATOR
 
-MODERATOR = 'moderator'
 
-
+# Reviews, Comment,
 class IsModeratorPermission(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
@@ -10,15 +10,17 @@ class IsModeratorPermission(permissions.BasePermission):
             return True
         return (obj.author == request.user
                 or request.user.role == MODERATOR
-                or request.user.is_superuser)
+                or request.user.is_superuser
+                or request.user.role == ADMIN)
 
 
+# Genre, Categories, Title
 class IsAdminOrReadOnly(permissions.IsAdminUser):
 
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return request.user.is_superuser
+        return request.user.role == ADMIN
 
 
 class IsUserAdminModeratorOrReadOnly(permissions.BasePermission):
@@ -31,12 +33,20 @@ class IsUserAdminModeratorOrReadOnly(permissions.BasePermission):
         return ((request.method in permissions.SAFE_METHODS)
                 or (obj.author == request.user
                     or request.user.role == MODERATOR
-                    or request.user.is_superuser))
+                    or request.user.role == ADMIN))
 
 
-class IsAdminOrAnonymousUser(permissions.IsAdminUser):
+# User
+class IsAdminOrSuperUser(permissions.BasePermission):
 
-    def has_object_permission(self, request, view, obj):
-        if request.user.is_superuser or not request.user.is_authenticated:
-            return True
-        return False
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and (
+                    request.user.role == ADMIN or request.user.is_superuser)
+
+    # def has_object_permission(self, request, view, obj):
+    #     if (obj.author == request.user
+    #             or request.user.role == MODERATOR
+    #             or request.user.is_superuser
+    #             or request.user.role == ADMIN):
+    #         return True
+    #     return False

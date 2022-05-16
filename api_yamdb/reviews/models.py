@@ -37,36 +37,50 @@ class Category(models.Model):
 
 
 class Title(models.Model):
-    """Модель Произведений"""
-    name = models.CharField(
-        max_length=30,
-        verbose_name='Название произведения',
-    )
-    year = models.PositiveIntegerField(verbose_name='Год издания',)
-    description = models.TextField(
+    name = models.CharField(max_length=100)
+    year = models.IntegerField()
+    category = models.ForeignKey(
+        Category,
         blank=True,
         null=True,
-        verbose_name='Описание',
+        on_delete=models.SET_NULL,
+        related_name='titles'
     )
     genre = models.ForeignKey(
         Genre,
         blank=True,
         null=True,
-        related_name='titles',
         on_delete=models.SET_NULL,
-        verbose_name='Жанр'
+        related_name='titless'
     )
-    category = models.ForeignKey(
-        Category,
+    description = models.CharField(
+        max_length=100,
         blank=True,
         null=True,
-        related_name='titles',
-        on_delete=models.SET_NULL,
-        verbose_name='Категория'
     )
+    rating = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         return self.name
+
+
+class GenreTitle(models.Model):
+    title_id = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='genres'
+    )
+    genre_id = models.ForeignKey(
+        Genre,
+        on_delete=models.CASCADE,
+        related_name='titles'
+    )
+
+    def __str__(self):
+        return str(self.id)
+
+    class Meta:
+        ordering = ['id']
 
 
 class Review(models.Model):

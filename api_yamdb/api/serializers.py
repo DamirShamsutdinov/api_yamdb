@@ -22,12 +22,18 @@ class GenreSerializer(serializers.ModelSerializer):
 class TitleSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
         queryset=Genre.objects.all(),
-        slug_field='slug', many=True
+        slug_field='slug', many=True,
     )
     category = serializers.SlugRelatedField(
-        slug_field='slug',
-        queryset=Category.objects.all()
+        queryset=Category.objects.all(),
+        slug_field='slug', many=True,
     )
+    """category = serializers.SlugRelatedField(
+        read_only=True, slug_field="slug", many=True
+    )
+    genre = serializers.SlugRelatedField(
+        read_only=True, slug_field="slug", many=True
+    )"""
 
     class Meta:
         model = Title
@@ -37,17 +43,15 @@ class TitleSerializer(serializers.ModelSerializer):
 class ListTitleSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(read_only=True, many=True)
-    rating = serializers.SerializerMethodField(read_only=True)
+    rating = serializers.SerializerMethodField(default=None)
 
     class Meta:
         model = Title
         fields = '__all__'
 
     def get_rating(self, obj):
-        return obj.reviews.aggregate(Avg('score'))
-        # queryset = Title.objects.all(
-        #         rating=Avg('reviews__score')
-        #     )
+        return obj.reviews.aggregate(Avg('score')).get('score__avg')
+        # return obj.reviews.aggregate(Avg('score')).get('score__avg')
 
 
 class ReviewSerializer(serializers.ModelSerializer):

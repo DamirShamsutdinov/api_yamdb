@@ -1,7 +1,7 @@
 import uuid
 
-from api.permissions import (IsAdminOrAnonymousUser, IsAdminOrReadOnly,
-                             IsModeratorPermission)
+from api.permissions import (IsAdminOrReadOnly,
+                             IsModeratorPermission, IsAdminOrSuperUser)
 from api.serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ListTitleSerializer,
                              ReviewSerializer, SignupSerializer,
@@ -68,24 +68,12 @@ class SignUpViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
 
 class UserViewSet(viewsets.ModelViewSet):
     """Вьюсет для доступа к Пользовател(-ю/ям)"""
-    lookup_field = 'username'
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsAdminUser,)
+    permission_classes = (IsAdminOrSuperUser,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
-
-    # пытаюсь сделать доступ на создание Юзера не только для Админа но и любому
-    @action(
-        detail=False,
-        methods=['POST'],
-        permission_classes=[IsAdminOrAnonymousUser],
-    )
-    def create_profile(self, request):
-        user = self.request.user
-        serializer = UserSerializer(user)
-        if request.method == 'POST':
-            return Response(serializer.data, status=status.HTTP_200_OK)
+    lookup_field = 'username'
 
     @action(
         detail=False,
@@ -97,23 +85,29 @@ class UserViewSet(viewsets.ModelViewSet):
         user = self.request.user
         serializer = UserSerializer(user)
         if request.method == 'GET':
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        serializer = UserSerializer(self.request.user, data=request.data,
-                                    partial=True)
+            return Response(serializer.data)
+        serializer = UserSerializer(
+            self.request.user,
+            data=request.data,
+            partial=True
+        )
         if serializer.is_valid(raise_exception=True):
             if serializer.validated_data.get('role'):
                 raise ValidationError('Нельзя менять самому себе роль!')
             serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+        return Response(serializer.data)
 
 class TitleViewSet(viewsets.ModelViewSet):
+    """queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')
+    )"""
     queryset = Title.objects.all()
+    serializer_class = TitleSerializer
     pagination_class = PageNumberPagination
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
+    filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category', 'genre', 'name', 'year')
-    ordering = ('name',)
+    ##ordering = ('name',)
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
