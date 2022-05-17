@@ -1,6 +1,5 @@
 from django.apps import AppConfig
 
 
-class ReviewsConfig(AppConfig):
+class TitlesConfig(AppConfig):
     name = 'reviews'
-    verbose_name = 'Модели проекта Yambd'
