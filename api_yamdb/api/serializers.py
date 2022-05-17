@@ -1,6 +1,5 @@
-from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers, status
+from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
 from rest_framework_simplejwt.tokens import AccessToken
@@ -49,43 +48,33 @@ class TitleSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ListTitleSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)
-    genre = GenreSerializer(read_only=True, many=True)
-    rating = serializers.SerializerMethodField(default=None)
-
-    class Meta:
-        model = Title
-        fields = '__all__'
-
-    def get_rating(self, obj):
-        return obj.reviews.aggregate(Avg('score'))
-        # return obj.reviews.aggregate(Avg('score')).get('score__avg')
-
-
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
+        slug_field='username',
         read_only=True,
-        slug_field='username'
     )
     title = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='id'
+        slug_field='id',
+        many=False,
+        read_only=True
     )
 
     class Meta:
         fields = '__all__'
         model = Review
 
-    def review_validation(self):
-        title_id = self.kwargs.get('id')
-        title = get_object_or_404(Title, pk=title_id)
-        reviews = self.request.user.reviews
-        if reviews.filter(title).exists:
+    def validate(self, data):
+        if self.context['request'].method != 'POST':
+            return data
+        title = get_object_or_404(
+            Title, pk=self.context['view'].kwargs.get('title_id')
+        )
+        author = self.context['request'].user
+        if Review.objects.filter(title_id=title, author=author).exists():
             raise serializers.ValidationError(
-                msg='Вы уже оставляли обзор на данное произведение',
-                status=status.HTTP_400_BAD_REQUEST
+                'Вы уже оставляли обзор на данное произведение'
             )
+        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):

@@ -1,6 +1,6 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import CheckConstraint, Q, UniqueConstraint
+from django.db.models import UniqueConstraint
 from users.models import User
 
 
@@ -17,7 +17,7 @@ class Genre(models.Model):
     )
 
     def __str__(self):
-        return self.slug
+        return self.name
 
 
 class Category(models.Model):
@@ -62,25 +62,6 @@ class Title(models.Model):
         return self.name
 
 
-class GenreTitle(models.Model):
-    title_id = models.ForeignKey(
-        Title,
-        on_delete=models.CASCADE,
-        related_name='genres'
-    )
-    genre_id = models.ForeignKey(
-        Genre,
-        on_delete=models.CASCADE,
-        related_name='titles'
-    )
-
-    def __str__(self):
-        return str(self.id)
-
-    class Meta:
-        ordering = ['id']
-
-
 class Review(models.Model):
     """Модель Отзывов"""
     title = models.ForeignKey(
@@ -114,10 +95,6 @@ class Review(models.Model):
     class Meta:
         ordering = ('-pub_date',)
         constraints = [
-            CheckConstraint(
-                check=Q(score__range=(0, 10)),
-                name='valid_rate'
-            ),
             UniqueConstraint(
                 fields=['author', 'title'],
                 name='unique_review')
@@ -132,15 +109,14 @@ class Comment(models.Model):
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
-        related_name='review'
+        related_name='comments'
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='author'
+        related_name='comments'
     )
     pub_date = models.DateTimeField(
-        verbose_name='Дата публикации комментария',
         auto_now_add=True,
     )
     text = models.TextField()
