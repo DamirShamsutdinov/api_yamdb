@@ -98,6 +98,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+
 class TitleViewSet(viewsets.ModelViewSet):
     """queryset = Title.objects.annotate(
         rating=Avg('reviews__score')
