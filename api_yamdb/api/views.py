@@ -98,7 +98,6 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-
 class TitleViewSet(viewsets.ModelViewSet):
     """queryset = Title.objects.annotate(
         rating=Avg('reviews__score')
@@ -109,7 +108,8 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category', 'genre', 'name', 'year')
-    #ordering = ('name',)
+
+    # ordering = ('name',)
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
