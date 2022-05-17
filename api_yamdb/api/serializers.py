@@ -28,12 +28,6 @@ class TitleSerializer(serializers.ModelSerializer):
         queryset=Category.objects.all(),
         slug_field='slug', many=True,
     )
-    """category = serializers.SlugRelatedField(
-        read_only=True, slug_field="slug", many=True
-    )
-    genre = serializers.SlugRelatedField(
-        read_only=True, slug_field="slug", many=True
-    )"""
 
     class Meta:
         model = Title
@@ -50,7 +44,7 @@ class ListTitleSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_rating(self, obj):
-        return obj.reviews.aggregate(Avg('score')).get('score__avg')
+        return obj.reviews.aggregate(Avg('score'))
         # return obj.reviews.aggregate(Avg('score')).get('score__avg')
 
 
@@ -99,8 +93,7 @@ class UserSerializer(serializers.ModelSerializer):
         required=True,
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
-    role = serializers.CharField(read_only=True,)
-
+    role = serializers.CharField(read_only=True, )
 
     def validate_email(self, attrs):
         if attrs == self.context['request'].user:

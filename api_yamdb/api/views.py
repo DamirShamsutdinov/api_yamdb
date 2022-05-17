@@ -1,7 +1,7 @@
 import uuid
 
-from api.permissions import (IsAdminOrReadOnly,
-                             IsModeratorPermission, IsAdminOrSuperUser)
+from api.permissions import (IsAdminOrReadOnly, IsAdminOrSuperUser,
+                             IsModeratorPermission)
 from api.serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ListTitleSerializer,
                              ReviewSerializer, SignupSerializer,
@@ -15,7 +15,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import (LimitOffsetPagination,
                                        PageNumberPagination)
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from reviews.models import Category, Comment, Genre, Review, Title, User
@@ -97,6 +97,7 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.save()
         return Response(serializer.data)
 
+
 class TitleViewSet(viewsets.ModelViewSet):
     """queryset = Title.objects.annotate(
         rating=Avg('reviews__score')
@@ -107,7 +108,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category', 'genre', 'name', 'year')
-    ##ordering = ('name',)
+    #ordering = ('name',)
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -120,7 +121,7 @@ class GenreViewSet(viewsets.ModelViewSet):
     serializer_class = GenreSerializer
     pagination_class = LimitOffsetPagination
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter, )
+    filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
 
@@ -136,8 +137,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     pagination_class = LimitOffsetPagination
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter, )
-    search_fields = ('name', )
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
     lookup_field = 'slug'
 
     def retrieve(self, request, *args, **kwargs):
