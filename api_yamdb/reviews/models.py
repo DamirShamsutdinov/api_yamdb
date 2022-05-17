@@ -4,7 +4,6 @@ from django.db.models import CheckConstraint, Q, UniqueConstraint
 from users.models import User
 
 
-
 class Genre(models.Model):
     """Модель Жанров"""
     name = models.CharField(
