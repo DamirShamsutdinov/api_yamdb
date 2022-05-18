@@ -48,6 +48,9 @@ class TitleSerializer(serializers.ModelSerializer):
         slug_field='slug',
         required=False,
     )
+    rating = serializers.IntegerField(
+        required=False
+    )
 
     class Meta:
         model = Title
