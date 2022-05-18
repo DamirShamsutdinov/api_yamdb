@@ -1,14 +1,13 @@
-from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
 from rest_framework_simplejwt.tokens import AccessToken
-
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 class CategoryField(serializers.SlugRelatedField):
+
     def to_representation(self, value):
         serializer = CategorySerializer(value)
         return serializer.data
@@ -21,6 +20,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class GenreField(serializers.SlugRelatedField):
+
     def to_representation(self, value):
         serializer = GenreSerializer(value)
         return serializer.data
@@ -44,23 +44,13 @@ class TitleSerializer(serializers.ModelSerializer):
         slug_field="slug",
         required=False,
     )
+    rating = serializers.IntegerField(
+        required=False
+    )
 
     class Meta:
         model = Title
         fields = "__all__"
-
-
-class ListTitleSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)
-    genre = GenreSerializer(read_only=True, many=True)
-    rating = serializers.SerializerMethodField(default=None)
-
-    class Meta:
-        model = Title
-        fields = "__all__"
-
-    def get_rating(self, obj):
-        return obj.reviews.aggregate(Avg("score")).get("score__avg")
 
 
 class ReviewSerializer(serializers.ModelSerializer):
