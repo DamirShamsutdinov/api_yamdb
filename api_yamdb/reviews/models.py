@@ -1,7 +1,6 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import CheckConstraint, Q, UniqueConstraint
-
+from django.db.models import UniqueConstraint
 from users.models import User
 
 
@@ -55,29 +54,9 @@ class Title(models.Model):
         blank=True,
         null=True,
     )
-    rating = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         return self.name
-
-
-class GenreTitle(models.Model):
-    title_id = models.ForeignKey(
-        Title,
-        on_delete=models.CASCADE,
-        related_name="genres"
-    )
-    genre_id = models.ForeignKey(
-        Genre,
-        on_delete=models.CASCADE,
-        related_name="titles"
-    )
-
-    def __str__(self):
-        return str(self.id)
-
-    class Meta:
-        ordering = ["id"]
 
 
 class Review(models.Model):
@@ -114,8 +93,9 @@ class Review(models.Model):
     class Meta:
         ordering = ("-pub_date",)
         constraints = [
-            CheckConstraint(check=Q(score__range=(0, 10)), name="valid_rate"),
-            UniqueConstraint(fields=["author", "title"], name="unique_review"),
+            UniqueConstraint(
+                fields=['author', 'title'],
+                name='unique_review')
         ]
 
     def __str__(self):
@@ -128,7 +108,7 @@ class Comment(models.Model):
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
-        related_name="review"
+        related_name="comments"
     )
     author = models.ForeignKey(
         User,
