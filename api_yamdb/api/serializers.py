@@ -107,6 +107,17 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
+
+    def validate_email(self, attrs):
+        if attrs == self.context['request'].user:
+            raise serializers.ValidationError(
+                'Такой email уже зарегистрирован!')
+        return attrs
+
     class Meta:
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
@@ -133,6 +144,12 @@ class SignupSerializer(serializers.ModelSerializer):
         if attrs == self.context['request'].user:
             raise serializers.ValidationError(
                 'Такой email уже зарегистрирован!')
+        return attrs
+
+    def validate_username(self, attrs):
+        if attrs == 'me':
+            raise serializers.ValidationError(
+                'Запрещено имя "me", придумайте другое имя!')
         return attrs
 
     class Meta:

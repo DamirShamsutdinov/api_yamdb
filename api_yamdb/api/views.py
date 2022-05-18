@@ -2,8 +2,7 @@ import uuid
 
 from api.filters import TitleFilter
 from api.permissions import (IsAdminOrReadOnly, IsAdminOrSuperUser,
-                             IsModeratorPermission,
-                             IsUserAdminModeratorOrReadOnly, IsProfile)
+                             IsUserAdminModeratorOrReadOnly)
 from api.serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ListTitleSerializer,
                              ReviewSerializer, SignupSerializer,
@@ -40,10 +39,6 @@ class SignUpViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
 
         username = serializer.initial_data.get('username')
         email = serializer.initial_data.get('email')
-        if username == 'me':
-            raise ValidationError('Запрещено имя "me", придумайте другое имя!')
-        if not (username and email):
-            serializer.is_valid(raise_exception=True)
 
         if User.objects.filter(username=username).exists():
             instance = User.objects.get(username=username)
@@ -82,9 +77,8 @@ class UserViewSet(viewsets.ModelViewSet):
 @api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated,])
 def get_profile(request):
-    user = get_object_or_404(User, username=request.user.username)
     if request.method == "PATCH":
-        serializer = ProfileSerializer(user, data=request.data)
+        serializer = ProfileSerializer(request.user, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
