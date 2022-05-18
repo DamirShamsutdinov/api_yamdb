@@ -74,6 +74,7 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
 
 
+
 @api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated,])
 def get_profile(request):
