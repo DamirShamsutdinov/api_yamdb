@@ -1,11 +1,13 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
+
 from users.models import User
 
 
 class Genre(models.Model):
     """Модель Жанров"""
+
     name = models.CharField(
         max_length=256,
         verbose_name='Название жанра',
@@ -17,11 +19,12 @@ class Genre(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return self.slug
 
 
 class Category(models.Model):
     """Модель Категорий"""
+
     name = models.CharField(
         max_length=256,
         verbose_name='Название категории',
@@ -49,7 +52,6 @@ class Title(models.Model):
     genre = models.ManyToManyField(
         Genre,
         blank=True,
-        null=True,
         related_name='titless'
     )
     description = models.CharField(
@@ -64,6 +66,7 @@ class Title(models.Model):
 
 class Review(models.Model):
     """Модель Отзывов"""
+
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,

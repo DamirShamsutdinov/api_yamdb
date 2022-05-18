@@ -3,34 +3,40 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
 from rest_framework_simplejwt.tokens import AccessToken
+
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 class CategoryField(serializers.SlugRelatedField):
+
     def to_representation(self, value):
         serializer = CategorySerializer(value)
         return serializer.data
 
 
 class CategorySerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Category
         exclude = ('id',)
 
 
 class GenreField(serializers.SlugRelatedField):
+
     def to_representation(self, value):
         serializer = GenreSerializer(value)
         return serializer.data
 
 
 class GenreSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Genre
         exclude = ('id',)
 
 
 class TitleSerializer(serializers.ModelSerializer):
+
     genre = GenreField(
         queryset=Genre.objects.all(),
         slug_field='slug',
@@ -49,6 +55,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
@@ -78,6 +85,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username'
@@ -93,55 +101,75 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+
     email = serializers.EmailField(
         required=True,
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
-    role = serializers.CharField(read_only=True, )
 
     def validate_email(self, attrs):
-        if attrs == self.context['request'].user:
+        if attrs == self.context["request"].user:
             raise serializers.ValidationError(
-                'Такой email уже зарегистрирован!')
-        return attrs
-
-    def validate_role(self, attrs):
-        if attrs:
-            raise serializers.ValidationError('Роль юзера менять нельзя!')
+                "Такой email уже зарегистрирован!"
+            )
         return attrs
 
     class Meta:
         fields = (
-            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+            "username", "email", "first_name", "last_name", "bio", "role"
         )
         model = User
 
 
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            "username", "email", "first_name", "last_name", "bio", "role",
+        )
+        read_only_fields = ("username", "email", "role",)
+
+
 class SignupSerializer(serializers.ModelSerializer):
+
     email = serializers.EmailField(
+        required=True,
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
 
+    def validate_email(self, attrs):
+        if attrs == self.context["request"].user:
+            raise serializers.ValidationError(
+                "Такой email уже зарегистрирован!"
+            )
+        return attrs
+
+    def validate_username(self, attrs):
+        if attrs == "me":
+            raise serializers.ValidationError(
+                'Запрещено имя "me", придумайте другое имя!'
+            )
+        return attrs
+
     class Meta:
         model = User
-        fields = ('username', 'email')
+        fields = ("username", "email")
 
 
 class TokenSerializer(TokenObtainSerializer):
     token_class = AccessToken
 
-    # confirmation_code = serializers.CharField(required=False)
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['confirmation_code'] = serializers.CharField(
-            required=False)
-        self.fields['password'] = serializers.HiddenField(default='')
+        self.fields["confirmation_code"] = serializers.CharField(
+            required=False
+        )
+        self.fields["password"] = serializers.HiddenField(default="")
 
     def validate(self, attrs):
-        self.user = get_object_or_404(User, username=attrs['username'])
-        if self.user.confirmation_code != attrs['confirmation_code']:
-            raise serializers.ValidationError('Неверный код подтверждения')
+        self.user = get_object_or_404(User, username=attrs["username"])
+        if self.user.confirmation_code != attrs["confirmation_code"]:
+            raise serializers.ValidationError("Неверный код подтверждения")
         data = str(self.get_token(self.user))
 
-        return {'token': data}
+        return {"token": data}
