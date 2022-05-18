@@ -1,21 +1,23 @@
 import uuid
 
+from api.filters import TitleFilter
 from api.permissions import (IsAdminOrReadOnly, IsAdminOrSuperUser,
-                             IsModeratorPermission)
+                             IsUserAdminModeratorOrReadOnly)
 from api.serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ListTitleSerializer,
                              ReviewSerializer, SignupSerializer,
-                             TitleSerializer, TokenSerializer, UserSerializer)
+                             TitleSerializer, TokenSerializer, UserSerializer,
+                             ProfileSerializer)
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import (LimitOffsetPagination,
                                        PageNumberPagination)
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from reviews.models import Category, Comment, Genre, Review, Title, User
@@ -37,10 +39,6 @@ class SignUpViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
 
         username = serializer.initial_data.get('username')
         email = serializer.initial_data.get('email')
-        if username == 'me':
-            raise ValidationError('Запрещено имя "me", придумайте другое имя!')
-        if not (username and email):
-            serializer.is_valid(raise_exception=True)
 
         if User.objects.filter(username=username).exists():
             instance = User.objects.get(username=username)
@@ -75,41 +73,27 @@ class UserViewSet(viewsets.ModelViewSet):
     search_fields = ('username',)
     lookup_field = 'username'
 
-    @action(
-        detail=False,
-        methods=['GET', 'PATCH'],
-        permission_classes=[IsModeratorPermission],
-        name='me'
-    )
-    def my_profile(self, request):
-        user = self.request.user
-        serializer = UserSerializer(user)
-        if request.method == 'GET':
-            return Response(serializer.data)
-        serializer = UserSerializer(
-            self.request.user,
-            data=request.data,
-            partial=True
-        )
-        if serializer.is_valid(raise_exception=True):
-            if serializer.validated_data.get('role'):
-                raise ValidationError('Нельзя менять самому себе роль!')
-            serializer.save()
-        return Response(serializer.data)
+
+
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated,])
+def get_profile(request):
+    if request.method == "PATCH":
+        serializer = ProfileSerializer(request.user, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    serializer = ProfileSerializer(request.user)
+    return Response(serializer.data)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    """queryset = Title.objects.annotate(
-        rating=Avg('reviews__score')
-    )"""
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     pagination_class = PageNumberPagination
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('category', 'genre', 'name', 'year')
-
-    # ordering = ('name',)
+    filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -151,7 +135,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = (IsModeratorPermission,)
+    permission_classes = (IsUserAdminModeratorOrReadOnly,)
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
@@ -178,7 +162,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = (IsModeratorPermission,)
+    permission_classes = (IsUserAdminModeratorOrReadOnly,)
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):

@@ -7,10 +7,22 @@ from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
+class CategoryField(serializers.SlugRelatedField):
+    def to_representation(self, value):
+        serializer = CategorySerializer(value)
+        return serializer.data
+
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         exclude = ('id',)
+
+
+class GenreField(serializers.SlugRelatedField):
+    def to_representation(self, value):
+        serializer = GenreSerializer(value)
+        return serializer.data
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -20,13 +32,16 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    genre = serializers.SlugRelatedField(
+    genre = GenreField(
         queryset=Genre.objects.all(),
-        slug_field='slug', many=True,
+        slug_field='slug',
+        required=False,
+        many=True,
     )
-    category = serializers.SlugRelatedField(
+    category = CategoryField(
         queryset=Category.objects.all(),
-        slug_field='slug', many=True,
+        slug_field='slug',
+        required=False,
     )
 
     class Meta:
@@ -44,33 +59,36 @@ class ListTitleSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_rating(self, obj):
-        return obj.reviews.aggregate(Avg('score'))
-        # return obj.reviews.aggregate(Avg('score')).get('score__avg')
+        return obj.reviews.aggregate(Avg('score')).get('score__avg')
 
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
+        slug_field='username',
         read_only=True,
-        slug_field='username'
     )
     title = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='id'
+        slug_field='id',
+        many=False,
+        read_only=True
     )
 
     class Meta:
         fields = '__all__'
         model = Review
 
-    def review_validation(self):
-        title_id = self.kwargs.get('id')
-        title = get_object_or_404(Title, pk=title_id)
-        reviews = self.request.user.reviews
-        if reviews.filter(title).exists:
+    def validate(self, data):
+        if self.context['request'].method != 'POST':
+            return data
+        title = get_object_or_404(
+            Title, pk=self.context['view'].kwargs.get('title_id')
+        )
+        author = self.context['request'].user
+        if Review.objects.filter(title_id=title, author=author).exists():
             raise serializers.ValidationError(
-                msg='Вы уже оставляли обзор на данное произведение',
-                status=status.HTTP_400_BAD_REQUEST
+                'Вы уже оставляли обзор на данное произведение'
             )
+        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -93,17 +111,11 @@ class UserSerializer(serializers.ModelSerializer):
         required=True,
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
-    role = serializers.CharField(read_only=True, )
 
     def validate_email(self, attrs):
         if attrs == self.context['request'].user:
             raise serializers.ValidationError(
                 'Такой email уже зарегистрирован!')
-        return attrs
-
-    def validate_role(self, attrs):
-        if attrs:
-            raise serializers.ValidationError('Роль юзера менять нельзя!')
         return attrs
 
     class Meta:
@@ -113,10 +125,32 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
 
 
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role',
+        )
+        read_only_fields = ('username', 'email', 'role',)
+
+
 class SignupSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
+        required=True,
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
+
+    def validate_email(self, attrs):
+        if attrs == self.context['request'].user:
+            raise serializers.ValidationError(
+                'Такой email уже зарегистрирован!')
+        return attrs
+
+    def validate_username(self, attrs):
+        if attrs == 'me':
+            raise serializers.ValidationError(
+                'Запрещено имя "me", придумайте другое имя!')
+        return attrs
 
     class Meta:
         model = User
@@ -125,8 +159,6 @@ class SignupSerializer(serializers.ModelSerializer):
 
 class TokenSerializer(TokenObtainSerializer):
     token_class = AccessToken
-
-    # confirmation_code = serializers.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
