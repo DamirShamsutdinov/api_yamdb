@@ -22,10 +22,10 @@
 
 ## Стек технологий
 
-- Python 3.9 
-- Django 2.2.16
-- Django REST Framework 3.12.4
-- Django REST Framework simplejwt 5.1.0
+Python 3.9
+Django 2.2.16
+Django REST Framework 3.12.4
+Django REST Framework simplejwt 5.1.0
 
 ## Как запустить проект
 
