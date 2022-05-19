@@ -1,19 +1,18 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-ADMIN = "admin"
-MODERATOR = "moderator"
-USER = "user"
-
-ROLE = [
-    (ADMIN, "Администратор"),
-    (MODERATOR, "Модератор"),
-    (USER, "Пользователь")
-]
-
 
 class User(AbstractUser):
     """Модель Пользователя"""
+    ADMIN = "admin"
+    MODERATOR = "moderator"
+    USER = "user"
+    ROLE = [
+        (ADMIN, "Администратор"),
+        (MODERATOR, "Модератор"),
+        (USER, "Пользователь")
+    ]
+    REQUIRED_FIELDS = ["email", "password"]
 
     bio = models.TextField(
         blank=True,
@@ -31,7 +30,6 @@ class User(AbstractUser):
         blank=True,
         verbose_name="Код потдверждения",
     )
-    REQUIRED_FIELDS = ["email", "password"]
 
     class Meta:
         ordering = ("id",)

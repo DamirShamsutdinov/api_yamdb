@@ -101,18 +101,18 @@ class UserSerializer(serializers.ModelSerializer):
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
 
+    class Meta:
+        fields = (
+            "username", "email", "first_name", "last_name", "bio", "role"
+        )
+        model = User
+
     def validate_email(self, attrs):
         if attrs == self.context["request"].user:
             raise serializers.ValidationError(
                 "Такой email уже зарегистрирован!"
             )
         return attrs
-
-    class Meta:
-        fields = (
-            "username", "email", "first_name", "last_name", "bio", "role"
-        )
-        model = User
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -130,6 +130,10 @@ class SignupSerializer(serializers.ModelSerializer):
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
 
+    class Meta:
+        model = User
+        fields = ("username", "email")
+
     def validate_email(self, attrs):
         if attrs == self.context["request"].user:
             raise serializers.ValidationError(
@@ -143,10 +147,6 @@ class SignupSerializer(serializers.ModelSerializer):
                 'Запрещено имя "me", придумайте другое имя!'
             )
         return attrs
-
-    class Meta:
-        model = User
-        fields = ("username", "email")
 
 
 class TokenSerializer(TokenObtainSerializer):
