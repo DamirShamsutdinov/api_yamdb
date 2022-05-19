@@ -114,6 +114,7 @@ class UserSerializer(serializers.ModelSerializer):
             )
         return attrs
 
+
     def validate_username(self, attrs):
         if attrs == self.context["request"].user:
             raise serializers.ValidationError(
