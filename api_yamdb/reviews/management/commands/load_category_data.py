@@ -130,4 +130,3 @@ class Command(BaseCommand):
             ).save()
             n += 1
             print(f'done {n}')
-
