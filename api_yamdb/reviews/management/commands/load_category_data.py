@@ -1,8 +1,7 @@
 import csv
-from django.core.management import BaseCommand
-from django.views import defaults
 
-from reviews.models import Category, Genre, Review, Title, Comment, GenreTitle
+from django.core.management import BaseCommand
+from reviews.models import Category, Comment, Genre, GenreTitle, Review, Title
 from users.models import User
 
 ALREDY_LOADED_ERROR_MESSAGE = """
@@ -23,7 +22,7 @@ class Command(BaseCommand):
             next(reader)
             n = 0
             for row in reader:
-                user = User(
+                User(
                     id=row[0],
                     username=row[1],
                     email=row[2],
@@ -31,8 +30,7 @@ class Command(BaseCommand):
                     bio=row[4],
                     first_name=row[5],
                     last_name=row[6],
-                )
-                user.save()
+                ).save()
                 n += 1
                 print(f'done {n}')
 
@@ -42,12 +40,11 @@ class Command(BaseCommand):
             next(reader)
             n = 0
             for row in reader:
-                category = Category(
+                Category(
                     id=row[0],
                     name=row[1],
                     slug=row[2],
-                )
-                category.save()
+                ).save()
                 n += 1
                 print(f'done {n}')
 
@@ -57,12 +54,11 @@ class Command(BaseCommand):
             next(reader)
             n = 0
             for row in reader:
-                genre = Genre(
+                Genre(
                     id=row[0],
                     name=row[1],
                     slug=row[2],
-                )
-                genre.save()
+                ).save()
                 n += 1
                 print(f'done {n}')
 
@@ -72,14 +68,13 @@ class Command(BaseCommand):
             next(reader)
             n = 0
             for row in reader:
-                category, _ = Category.objects.get_or_create(id=row[3], defaults={'id': None})
-                title = Title(
+                category = Category.objects.get(id=row[3])
+                Title(
                     id=row[0],
                     name=row[1],
                     year=row[2],
                     category=category
-                )
-                title.save()
+                ).save()
                 n += 1
                 print(f'done {n}')
 
@@ -105,35 +100,34 @@ class Command(BaseCommand):
             next(reader)
             n = 0
             for row in reader:
-                title, _ = Title.objects.get_or_create(id=row[1])
-                author, _ = User.objects.get_or_create(id=row[3])
-                review = Review(
+                title = Title.objects.get(id=row[1])
+                author = User.objects.get(id=row[3])
+                Review(
                     id=row[0],
                     title_id=title.id,
                     text=row[2],
                     author=author,
                     score=row[4],
                     pub_date=row[5],
-                )
-                review.save()
+                ).save()
                 n += 1
                 print(f'done {n}')
 
-        print("Loading Comment data")
-        with open('static/data/comments.csv', encoding='utf-8') as csv_file:
-            reader = csv.reader(csv_file)
-            next(reader)
-            n = 0
-            for row in reader:
-                review_id, _ = Review.objects.get_or_create(id=row[1], defaults={'id': None})
-                author, _ = User.objects.get_or_create(id=row[3], defaults={'id': None})
-                comment = Comment.objects.create(
-                    id=row[0],
-                    review_id=review_id.id,
-                    text=row[2],
-                    author=author,
-                    pub_date=row[4]
-                )
-                comment.save()
-                n += 1
-                print(f'done {n}')
+    print("Loading Comment data")
+    with open('static/data/comments.csv', encoding='utf-8') as csv_file:
+        reader = csv.reader(csv_file)
+        next(reader)
+        n = 0
+        for row in reader:
+            review_id = Review.objects.get(id=row[1])
+            author = User.objects.get(id=row[3])
+            Comment.objects.create(
+                id=row[0],
+                review=review_id,
+                text=row[2],
+                author=author,
+                pub_date=row[4]
+            ).save()
+            n += 1
+            print(f'done {n}')
+
