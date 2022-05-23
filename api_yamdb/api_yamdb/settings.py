@@ -21,7 +21,7 @@ INSTALLED_APPS = [
     "api",
     "reviews",
     "users",
-    "polls",
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
