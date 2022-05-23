@@ -69,25 +69,27 @@ class Title(models.Model):
         return self.name
 
 
-class Review(models.Model):
-    """Модель Отзывов"""
-
+class GenreTitle(models.Model):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name="reviews",
-        verbose_name="Произведение с отзывом",
+        related_name='genres'
     )
-    author = models.ForeignKey(
-        User,
+    genre = models.ForeignKey(
+        Genre,
         on_delete=models.CASCADE,
-        related_name="reviews",
-        verbose_name="Автор отзыва",
+        related_name='titles'
     )
-    pub_date = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Дата отзыва",
-    )
+
+    def __str__(self):
+        return str(self.id)
+
+    class Meta:
+        ordering = ['id']
+
+
+class Review(models.Model):
+    """Модель Отзывов"""
     text = models.TextField(
         help_text="Введите текст отзыва",
         verbose_name="Текст отзыва",
@@ -98,6 +100,22 @@ class Review(models.Model):
             MaxValueValidator(10, "Максимальная оценка - 10"),
         ],
         verbose_name="Оценка произведения",
+    )
+    pub_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата отзыва",
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="reviews",
+        verbose_name="Автор отзыва",
+    )
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name="reviews",
+        verbose_name="Произведение с отзывом",
     )
 
     class Meta:
@@ -131,7 +149,7 @@ class Comment(models.Model):
         auto_now_add=True,
         verbose_name="Дата комментария",
     )
-    text = models.TextField(verbose_name="Текст комментария",)
+    text = models.TextField(verbose_name="Текст комментария", )
 
     class Meta:
         ordering = ("-pub_date",)
